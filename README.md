@@ -6,12 +6,10 @@ I just wanted to set my external monitor's luminance from the command line.
 
 ```console
 $ set-luminance --help
-Set the luminance of my external monitor from the command line, on macOS (Apple Silicon).
-
-Usage: set-luminance <VALUE>
+Usage: set-luminance [VALUE]
 
 Arguments:
-  <VALUE>  Display luminance, from 0 to 100
+  [VALUE]  Display luminance, from 0 to 100. If not provided, the current luminance is displayed
 
 Options:
   -h, --help     Print help
