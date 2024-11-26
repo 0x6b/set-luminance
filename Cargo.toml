@@ -1,6 +1,6 @@
 [package]
 name = "set-luminance"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 description = "Set the luminance of my external monitor from the command line, on macOS (Apple Silicon)."
 
