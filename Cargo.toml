@@ -8,4 +8,6 @@ description = "Set the luminance of my external monitor from the command line, o
 anyhow = "1.0.93"
 clap = { version = "4.5.21", features = ["derive"] }
 core-foundation = "0.10.0"
+env_logger = "0.11.5"
+log = "0.4.22"
 objc = "0.2.7"
