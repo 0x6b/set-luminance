@@ -6,10 +6,12 @@ I just wanted to set my external monitor's luminance from the command line.
 
 ```console
 $ set-luminance --help
-Usage: set-luminance [VALUE]
+Controls luminance (brightness) of an external display over DDC
+
+Usage: set-luminance [0-100]
 
 Arguments:
-  [VALUE]  Display luminance, from 0 to 100. If not provided, the current luminance is displayed
+  [0-100]  Display luminance, from 0 to 100. If omitted, prints the current luminance
 
 Options:
   -h, --help     Print help
