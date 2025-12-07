@@ -45,11 +45,12 @@ pub fn current_luminance() -> Result<u16, String> {
 }
 
 /// Set the luminance level on the display (clamp upstream if needed).
-pub fn set_luminance(value: u16) -> Result<(), String> {
+pub fn set_luminance(value: u8) -> Result<(), String> {
+    let value = value.min(100);
     let service =
         Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
     service
-        .set_luminance(value)
+        .set_luminance(value.into())
         .map_err(|err| format!("DDC write failed: {err}"))
 }
 
@@ -99,8 +100,9 @@ impl Ddc {
         Ok(u16::from_be_bytes([response[8], response[9]]))
     }
 
-    fn set_luminance(&self, value: u16) -> Result<(), i32> {
-        let mut payload = [0x84, 0x03, 0x10, (value >> 8) as u8, value as u8, 0];
+    fn set_luminance(&self, value: u8) -> Result<(), i32> {
+        let [hi, lo] = (value as u16).to_be_bytes();
+        let mut payload = [0x84, 0x03, 0x10, hi, lo, 0];
         payload[5] = checksum(CHECKSUM_SEED ^ INPUT_ADDR as u8, &payload[..5]);
 
         for _ in 0..2 {

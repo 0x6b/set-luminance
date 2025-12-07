@@ -8,18 +8,18 @@ use set_luminance::{current_luminance, set_luminance};
 struct Cli {
     /// Display luminance, from 0 to 100. If omitted, prints the current luminance.
     #[arg(value_name = "0-100")]
-    value: Option<u16>,
+    value: Option<u8>,
 }
 
 enum Command {
     Get,
-    Set(u16),
+    Set(u8),
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let command = match cli.value {
-        Some(value) => Command::Set(value.min(100)),
+        Some(value) => Command::Set(value.clamp(0, 100)),
         None => Command::Get,
     };
 
