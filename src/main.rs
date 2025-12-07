@@ -1,29 +1,40 @@
-use anyhow::Result;
-use clap::Parser;
-use env_logger::Env;
-use log::info;
-use set_luminance::DisplayService;
+use std::process::ExitCode;
 
-#[derive(Debug, Parser)]
-#[clap(version)]
-pub struct Args {
-    /// Display luminance, from 0 to 100. If not provided, the current luminance is displayed.
-    #[arg()]
-    pub value: Option<u8>,
+use clap::Parser;
+use set_luminance::{current_luminance, set_luminance};
+
+#[derive(Parser)]
+#[command(about, version)]
+struct Cli {
+    /// Display luminance, from 0 to 100. If omitted, prints the current luminance.
+    #[arg(value_name = "0-100")]
+    value: Option<u16>,
 }
 
-fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+enum Command {
+    Get,
+    Set(u16),
+}
 
-    let args = Args::parse();
-    let service = DisplayService::try_new()?;
+fn main() -> ExitCode {
+    let cli = Cli::parse();
+    let command = match cli.value {
+        Some(value) => Command::Set(value.min(100)),
+        None => Command::Get,
+    };
 
-    match args.value {
-        Some(value) => service.set_luminance(value)?,
-        None => {
-            info!("Current luminance: {}", service.get_luminance()?)
-        }
+    run(command).map_or_else(
+        |message| {
+            eprintln!("{message}");
+            ExitCode::FAILURE
+        },
+        |_| ExitCode::SUCCESS,
+    )
+}
+
+fn run(command: Command) -> Result<(), String> {
+    match command {
+        Command::Get => current_luminance().map(|value| println!("{value}")),
+        Command::Set(value) => set_luminance(value),
     }
-
-    Ok(())
 }

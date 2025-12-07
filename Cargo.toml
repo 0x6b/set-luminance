@@ -1,13 +1,13 @@
 [package]
 name = "set-luminance"
-version = "1.1.0"
-edition = "2021"
-description = "Set the luminance of my external monitor from the command line, on macOS (Apple Silicon)."
+version = "1.1.2"
+edition = "2024"
+description = "Controls luminance (brightness) of an external display over DDC"
 
 [dependencies]
-anyhow = "1.0.93"
-clap = { version = "4.5.21", features = ["derive"] }
-core-foundation = "0.10.0"
-env_logger = "0.11.5"
-log = "0.4.22"
-objc = "0.2.7"
+clap = { version = "4.5.53", features = ["derive"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
