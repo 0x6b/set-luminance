@@ -31,10 +31,10 @@ impl LuminancePacket {
 
     pub fn new_read_packet() -> Self {
         let mut packet = Self { data: [0; 16] };
-        packet.data[0] = 0x83; // Read command
+        packet.data[0] = 0x82; // Read command
         packet.data[1] = 0x01; // Length
         packet.data[2] = 0x10; // DDC command for luminance
-        packet.data[3] = packet.data[0] ^ packet.data[1] ^ packet.data[2] ^ 0x51 ^ 0x6E; // Checksum
+        packet.data[3] = (0x6E ^ 0x50) ^ packet.data[0] ^ packet.data[1] ^ packet.data[2]^ packet.data[3]^ packet.data[4]; // Checksum
         packet
     }
 }
