@@ -5,6 +5,8 @@ use std::{
     time::Duration,
 };
 
+use ptr::null;
+
 /// DDC/CI sink address used by the display.
 const CHIP_ADDR: u32 = 0x37;
 /// I2C input address for DDC traffic.
@@ -55,7 +57,7 @@ struct Ddc(NonNull<c_void>);
 
 impl Ddc {
     fn connect() -> Option<Self> {
-        NonNull::new(unsafe { IOAVServiceCreate(ptr::null()) }).map(Self)
+        NonNull::new(unsafe { IOAVServiceCreate(null()) }).map(Self)
     }
 
     fn write(&self, payload: &[u8]) -> Result<(), i32> {
