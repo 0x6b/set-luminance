@@ -11,30 +11,17 @@ struct Cli {
     value: Option<u8>,
 }
 
-enum Command {
-    Get,
-    Set(u8),
-}
-
 fn main() -> ExitCode {
-    let cli = Cli::parse();
-    let command = match cli.value {
-        Some(value) => Command::Set(value.clamp(0, 100)),
-        None => Command::Get,
+    let result = match Cli::parse().value {
+        Some(value) => set_luminance(value),
+        None => current_luminance().map(|v| println!("{v}")),
     };
 
-    run(command).map_or_else(
-        |message| {
-            eprintln!("{message}");
+    result.map_or_else(
+        |e| {
+            eprintln!("{e}");
             ExitCode::FAILURE
         },
         |_| ExitCode::SUCCESS,
     )
-}
-
-fn run(command: Command) -> Result<(), String> {
-    match command {
-        Command::Get => current_luminance().map(|value| println!("{value}")),
-        Command::Set(value) => set_luminance(value),
-    }
 }
