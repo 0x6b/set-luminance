@@ -1,5 +1,5 @@
 [package]
-name = "set-luminance"
+name = "akarusa"
 version = "1.1.2"
 edition = "2024"
 description = "Controls luminance (brightness) of an external display over DDC"

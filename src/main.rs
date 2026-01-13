@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
 use clap::Parser;
-use set_luminance::{current_luminance, set_luminance};
+use akarusa::{current_luminance, set_luminance};
 
 #[derive(Parser)]
 #[command(about, version)]
