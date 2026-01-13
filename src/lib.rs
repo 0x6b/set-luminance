@@ -50,7 +50,7 @@ pub fn set_luminance(value: u8) -> Result<(), String> {
     let service =
         Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
     service
-        .set_luminance(value.into())
+        .set_luminance(value)
         .map_err(|err| format!("DDC write failed: {err}"))
 }
 
