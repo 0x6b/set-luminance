@@ -1,11 +1,9 @@
 use std::{
     ffi::c_void,
-    ptr::{self, NonNull},
+    ptr::{NonNull, null},
     thread::sleep,
     time::Duration,
 };
-
-use ptr::null;
 
 /// DDC/CI sink address used by the display.
 const CHIP_ADDR: u32 = 0x37;
@@ -38,7 +36,7 @@ unsafe extern "C" {
 }
 
 /// Return the current luminance as reported by the display.
-pub fn current_luminance() -> Result<u16, String> {
+pub fn current_luminance() -> Result<u8, String> {
     let service =
         Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
     service.luminance().map_err(|err| format!("DDC read failed: {err}"))
@@ -50,7 +48,7 @@ pub fn set_luminance(value: u8) -> Result<(), String> {
     let service =
         Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
     service
-        .set_luminance(value.into())
+        .set_luminance(value)
         .map_err(|err| format!("DDC write failed: {err}"))
 }
 
@@ -90,14 +88,14 @@ impl Ddc {
         if ret == 0 { Ok(()) } else { Err(ret) }
     }
 
-    fn luminance(&self) -> Result<u16, i32> {
+    fn luminance(&self) -> Result<u8, i32> {
         let mut request = [0u8; 4];
         request[..3].copy_from_slice(&READ_HEADER);
         request[3] = checksum(CHECKSUM_SEED, &request[..3]);
 
         let mut response = [0u8; 12];
         self.read(&request, &mut response)?;
-        Ok(u16::from_be_bytes([response[8], response[9]]))
+        Ok(response[9])
     }
 
     fn set_luminance(&self, value: u8) -> Result<(), i32> {

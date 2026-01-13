@@ -1,14 +1,14 @@
-# set-luminance
+# akarusa
 
 I just wanted to set my external monitor's luminance from the command line.
 
 ## Usage
 
 ```console
-$ set-luminance --help
+$ akarusa --help
 Controls luminance (brightness) of an external display over DDC
 
-Usage: set-luminance [0-100]
+Usage: akarusa [0-100]
 
 Arguments:
   [0-100]  Display luminance, from 0 to 100. If omitted, prints the current luminance
@@ -21,7 +21,7 @@ Options:
 i.e.
 
 ```console
-$ set-luminance 50
+$ akarusa 70
 ```
 
 ## How to Contribute
@@ -40,8 +40,7 @@ There should be similar and/or more capable tools available in every language an
 
 ## Acknowledgements
 
-[waydabber/m1ddc](https://github.com/waydabber/m1ddc/) and
-[haimgel/ddc-macos-rs](https://github.com/haimgel/ddc-macos-rs/) for the inspiration and implementation.
+[waydabber/m1ddc](https://github.com/waydabber/m1ddc/) and [haimgel/ddc-macos-rs](https://github.com/haimgel/ddc-macos-rs/) for the inspiration and implementation.
 
 ## License
 
