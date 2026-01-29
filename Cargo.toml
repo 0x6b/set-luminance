@@ -5,9 +5,10 @@ edition = "2024"
 description = "Controls luminance (brightness) of an external display over DDC"
 
 [dependencies]
-clap = { version = "4.5.53", features = ["derive"] }
 
 [profile.release]
+opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+strip = true
