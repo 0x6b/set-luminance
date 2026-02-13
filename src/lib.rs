@@ -15,6 +15,8 @@ const DDC_WAIT: Duration = Duration::from_micros(10_000);
 const READ_RETRIES: usize = 3;
 /// Base checksum seed prescribed by the DDC/CI spec.
 const CHECKSUM_SEED: u8 = 0x6e;
+/// Base checksum seed for monitor -> host responses.
+const RESPONSE_CHECKSUM_SEED: u8 = (((CHIP_ADDR as u8) << 1) | 0x01) ^ INPUT_ADDR as u8;
 /// DDC/CI "get VCP feature" response opcode.
 const READ_RESPONSE_OPCODE: u8 = 0x02;
 /// DDC/CI "get VCP feature" header for luminance (VCP code 0x10).
@@ -45,21 +47,20 @@ unsafe extern "C" {
 
 /// Return the current luminance as reported by the display.
 pub fn current_luminance() -> Result<u8, String> {
-    let service =
-        Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
-    service
+    connect()?
         .luminance()
         .map_err(|err| format!("DDC read failed: {err}"))
 }
 
 /// Set the luminance level on the display (clamp upstream if needed).
 pub fn set_luminance(value: u8) -> Result<(), String> {
-    let value = value.min(100);
-    let service =
-        Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())?;
-    service
-        .set_luminance(value)
+    connect()?
+        .set_luminance(value.min(100))
         .map_err(|err| format!("DDC write failed: {err}"))
+}
+
+fn connect() -> Result<Ddc, String> {
+    Ddc::connect().ok_or_else(|| "Could not find a suitable external display.".to_string())
 }
 
 struct Ddc(NonNull<c_void>);
@@ -110,16 +111,11 @@ impl Ddc {
 
         let mut last_error = ERR_INVALID_RESPONSE;
         for _ in 0..READ_RETRIES {
-            let mut response = [0u8; 12];
-            match self.read(&request, &mut response) {
-                Ok(()) => {
-                    if let Some((current, max)) =
-                        parse_vcp_feature_response(&response, READ_HEADER[2])
-                    {
-                        return Ok((current, max));
-                    }
-                    last_error = ERR_INVALID_RESPONSE;
-                }
+            let mut frame = [0u8; 12];
+            match self.read(&request, &mut frame).and_then(|_| {
+                parse_vcp_feature_response(&frame, READ_HEADER[2]).ok_or(ERR_INVALID_RESPONSE)
+            }) {
+                Ok(value) => return Ok(value),
                 Err(err) => last_error = err,
             }
         }
@@ -131,10 +127,7 @@ impl Ddc {
         let mut payload = [0x84, 0x03, 0x10, hi, lo, 0];
         payload[5] = checksum(CHECKSUM_SEED ^ INPUT_ADDR as u8, &payload[..5]);
 
-        for _ in 0..2 {
-            self.write(&payload)?;
-        }
-        Ok(())
+        (0..2).try_for_each(|_| self.write(&payload))
     }
 }
 
@@ -148,30 +141,23 @@ fn parse_vcp_feature_response(frame: &[u8], feature: u8) -> Option<(u16, u16)> {
     }
 
     let payload_len = (frame[1] & 0x7f) as usize;
-    if payload_len < 8 || payload_len + 2 >= frame.len() {
+    let payload_end = 2 + payload_len;
+    if payload_len < 8 || payload_end >= frame.len() {
         return None;
     }
 
-    let expected_checksum = checksum(response_checksum_seed(), &frame[1..2 + payload_len]);
-    if frame[2 + payload_len] != expected_checksum {
+    let payload = &frame[2..payload_end];
+    if frame[payload_end] != checksum(RESPONSE_CHECKSUM_SEED, &frame[1..payload_end]) {
         return None;
     }
 
-    let payload = &frame[2..2 + payload_len];
     if payload[0] != READ_RESPONSE_OPCODE || payload[1] != VCP_OK || payload[2] != feature {
         return None;
     }
 
     let max = u16::from_be_bytes([payload[4], payload[5]]);
-    if max == 0 {
-        return None;
-    }
     let current = u16::from_be_bytes([payload[6], payload[7]]);
-    Some((current.min(max), max))
-}
-
-fn response_checksum_seed() -> u8 {
-    (((CHIP_ADDR as u8) << 1) | 0x01) ^ INPUT_ADDR as u8
+    (max != 0).then_some((current.min(max), max))
 }
 
 fn normalize_percent(current: u16, max: u16) -> u8 {
@@ -188,7 +174,7 @@ fn normalize_percent(current: u16, max: u16) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::{
-        CHECKSUM_SEED, normalize_percent, parse_vcp_feature_response, response_checksum_seed,
+        CHECKSUM_SEED, RESPONSE_CHECKSUM_SEED, normalize_percent, parse_vcp_feature_response,
     };
 
     #[test]
@@ -211,7 +197,7 @@ mod tests {
         frame[7] = 0x64;
         frame[8] = 0x00;
         frame[9] = 0x46;
-        frame[10] = super::checksum(response_checksum_seed(), &frame[1..10]);
+        frame[10] = super::checksum(RESPONSE_CHECKSUM_SEED, &frame[1..10]);
 
         assert_eq!(parse_vcp_feature_response(&frame, 0x10), Some((70, 100)));
     }
